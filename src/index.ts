@@ -1,30 +1,37 @@
-import {parser} from "./syntax.grammar"
-import {LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent} from "@codemirror/language"
-import {styleTags, tags as t} from "@codemirror/highlight"
+import { parser } from './syntax.grammar'
+import { LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent } from '@codemirror/language'
+import { styleTags, tags as t } from '@codemirror/highlight'
+import { completeFromList } from "@codemirror/autocomplete"
 
-export const EXAMPLELanguage = LRLanguage.define({
+export const jinja2Language = LRLanguage.define({
   parser: parser.configure({
-    props: [
-      indentNodeProp.add({
-        Application: delimitedIndent({closing: ")", align: false})
-      }),
-      foldNodeProp.add({
-        Application: foldInside
-      }),
-      styleTags({
-        Identifier: t.variableName,
-        Boolean: t.bool,
-        String: t.string,
-        LineComment: t.lineComment,
-        "( )": t.paren
-      })
-    ]
+    // props: [
+    // indentNodeProp.add({
+    //   Application: delimitedIndent({ closing: ')', align: false })
+    //   Application: context => context.column(context.node.from) + context.unit
+    // }),
+    // foldNodeProp.add({
+    //   Application: foldInside
+    // }),
+    // styleTags({
+    //   // Variable: t.variableName,
+    //   // String: t.string,
+    // })
+    // ]
   }),
   languageData: {
-    commentTokens: {line: ";"}
+    // commentTokens: { line: ';' }
   }
 })
 
-export function EXAMPLE() {
-  return new LanguageSupport(EXAMPLELanguage)
+export const jinja2Completion = jinja2Language.data.of({
+  autocomplete: completeFromList([
+    { label: "extends", type: "keyword" },
+    { label: "from", type: "keyword" },
+    { label: "import", type: "function" },
+  ])
+})
+
+export function jinja2 () {
+  return new LanguageSupport(jinja2Language, [jinja2Completion])
 }

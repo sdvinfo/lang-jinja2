@@ -1,10 +1,11 @@
 {
-  "name": "@codemirror/lang-EXAMPLE",
+  "name": "@codemirror/lang-jinja2",
   "version": "0.1.0",
-  "description": "EXAMPLE language support for CodeMirror",
+  "description": "Jinja2 language support for CodeMirror",
   "scripts": {
     "test": "mocha test/test.js",
-    "prepare": "rollup -c"
+    "prepare": "rollup -c",
+    "dev": "nodemon --watch ./src --ext ts,grammar --exec 'npm run prepare'"
   },
   "type": "module",
   "main": "dist/index.cjs",
@@ -16,8 +17,10 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "dependencies": {
+    "@codemirror/autocomplete": "^0.19.13",
     "@codemirror/highlight": "^0.19.0",
     "@codemirror/language": "^0.19.0",
+    "@codemirror/state": "0.19.9",
     "@lezer/lr": "^0.15.0"
   },
   "devDependencies": {

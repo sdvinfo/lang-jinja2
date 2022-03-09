@@ -1,26 +1,22 @@
 @top Program { expression* }
 
-@skip { space | LineComment }
+// @skip { space | Comment }
 
 expression {
-  Identifier |
-  String |
-  Boolean |
-  Application { "(" expression* ")" }
+  Identifier
 }
 
 @tokens {
-  Identifier { $[a-zA-Z_\-0-9]+ }
 
-  String { '"' (!["\\] | "\\" _)* '"' }
+  Identifier { $[a-zA-Z_0-9]+ }
+  // String { '"' (!["\\] | "\\" _)* '"' }
+  // Statement { 'from' }
+  // Variable { $\{\{(.*?)\}\} }
+  // Variable { 'var' }
+  // Comment { "{#" ![\n]* }
 
-  Boolean { "#t" | "#f" }
+  // space { $[ \t\n\r]+ }
 
-  LineComment { ";" ![\n]* }
-
-  space { $[ \t\n\r]+ }
-
-  "(" ")"
 }
 
-@detectDelim
+// @detectDelim
