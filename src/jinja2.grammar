@@ -1,0 +1,122 @@
+@precedence {
+  if @right,
+  else @right,
+  elif @right,
+  member,
+  comma @left,
+  statement @cut,
+  decl @cut,
+  predicate,
+  ExtendsStatement,
+  ImportStatement,
+  BlockStatement
+  // VariableStatement,
+  // CommonStatement
+}
+
+@top Jinja2Template { (statement | BlockDecl)+ }
+
+
+statement[@isGroup=Statement] {
+  // BlockDecl
+  Element
+  // ImportStatement |
+  // VariableStatement
+  // CommonStatement { statementBlock } |
+  // BlockStatement
+}
+
+Element {
+  ExtendsStatement |
+  ImportStatement |
+  // StartTag kw<"extends"> FileName EndTag |
+  // StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag |
+  // OpenStyleTag StyleText (CloseStyleTag | missingCloseTag) |
+  // OpenTextareaTag TextareaText (CloseTextareaTag | missingCloseTag) |
+  StartTag statement* EndTag
+  // SelfClosingTag
+}
+
+BlockStatement { StartTag kw<"block"> BlockName ![{%}]* statement* kw<"endblock"> EndTag }
+ExtendsStatement { StartTag kw<"extends"> FileName EndTag }
+ImportStatement { StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag }
+VariableStatement { startVariable VariableName endVariable }
+// @precedence { ExtendsStatement, ImportStatement, BlockStatement }
+
+// ExtendsStatement { StartTag kw<"extends"> anyQuotationMark FileName anyQuotationMark EndTag } |
+// ImportStatement { StartTag kw<"from"> anyQuotationMark FileName anyQuotationMark kw<"import"> ImportName WithContext? EndTag }
+
+
+
+
+
+ImportName { word }
+FileName { ('"' | "'") word ('"' | "'") }
+BlockName { word }
+WithContext { ckw<"with"> ckw<"context"> }
+kw<term> { @specialize[@name={term}]<identifier, term> }
+// Contextual keywords
+ckw<term> { @extend[@name={term}]<identifier, term> }
+anyQuotationMark { ("'" | '"') }
+// @skip { spaces | newline | Comment }
+
+@skip { spaces | newline | CommentBlock } {
+  // StartTag { "{%" }
+  // EndTag { "%}" }
+  StartTag[closedBy="EndTag"] { "{%" }
+  EndTag[openedBy="StartTag"] { "%}" }
+  VariableName { identifier+ ~arrow }
+  // TypeName { identifier ~arrow }
+  // Label { identifier }
+  StartBlock { StartTag kw<"block"> BlockName EndTag }
+  EndBlock { StartTag kw<"endblock"> EndTag }
+}
+
+
+@tokens {
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+  word { identifierChar (identifierChar | std.digit)* }
+  identifier { word }
+  string { ('"' | "'") (word | '.')* ('"' | "'") }
+  @precedence { spaces, newline, identifier }
+  @precedence { spaces, newline, word }
+
+  list<item> { item ("," item)* }
+  BlockDecl { "{%" ("block" | "BLOCK") word* "%}" }
+
+  // FIXME split into multiple tokens
+  CommentBlock { "{#" blockCommentRest }
+  blockCommentRest { ![#] blockCommentRest | "#" blockCommentAfterStar }
+  blockCommentAfterStar { "}" | "#" blockCommentAfterStar | ![#}] blockCommentRest }
+
+  statementBlock { "{%" blockStatementRest }
+  blockStatementRest { ![%] blockStatementRest | "%" blockStatementAfterStar }
+  blockStatementAfterStar { "}" | "%" blockStatementAfterStar | ![%}] blockStatementRest }
+
+  startVariable { "{{" }
+  endVariable { "}}" }
+
+
+  identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
+  // word { identifierChar (identifierChar | std.digit | '.')* }
+  // word { identifierChar (identifierChar | std.digit )* }
+
+  Number {
+    (std.digit ("_" | std.digit)* ("." ("_" | std.digit)*)? | "." std.digit ("_" | std.digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | std.digit)+)? |
+    std.digit ("_" | std.digit)* "n" |
+    "0x" (std.digit | $[a-fA-F] | "_")+ "n"? |
+    "0b" $[01_]+ "n"? |
+    "0o" $[0-7_]+ "n"?
+  }
+
+  // String { word+ }
+
+  "{{" "}}" "{%" "%}"
+  // "(" ")" "[" "]" "{" "}"
+  // "." "," ":"
+
+}
+
+@detectDelim

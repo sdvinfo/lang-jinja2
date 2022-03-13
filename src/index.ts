@@ -1,4 +1,4 @@
-import { parser } from './syntax.grammar'
+import { parser } from './jinja2.grammar'
 import { LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent } from '@codemirror/language'
 import { styleTags, tags as t } from '@codemirror/highlight'
 import { completeFromList } from "@codemirror/autocomplete"
@@ -20,7 +20,7 @@ export const jinja2Language = LRLanguage.define({
     // ]
   }),
   languageData: {
-    // commentTokens: { line: ';' }
+    commentTokens: { block: { open: "{#", close: "#}" } }
   }
 })
 

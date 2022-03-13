@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "description": "Jinja2 language support for CodeMirror",
   "scripts": {
-    "test": "mocha test/test.js",
-    "prepare": "rollup -c",
-    "dev": "nodemon --watch ./src --ext ts,grammar --exec 'npm run prepare'"
+    "build": "lezer-generator src/jinja2.grammar -o src/parser && rollup -c",
+    "build-debug": "lezer-generator src/jinja2.grammar --names -o src/parser && rollup -c",
+    "prepare": "npm run build",
+    "rollup": "rollup -c",
+    "dev": "nodemon --watch ./src --ext ts,grammar --exec 'npm run rollup'",
+    "test": "mocha test/test.js"
   },
   "type": "module",
   "main": "dist/index.cjs",
