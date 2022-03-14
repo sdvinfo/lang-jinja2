@@ -27,8 +27,8 @@ statement[@isGroup=Statement] {
 }
 
 Element {
-  ExtendsStatement |
-  ImportStatement |
+  // ExtendsStatement |
+  // ImportStatement
   // StartTag kw<"extends"> FileName EndTag |
   // StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag |
   // OpenStyleTag StyleText (CloseStyleTag | missingCloseTag) |
