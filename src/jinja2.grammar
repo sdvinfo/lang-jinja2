@@ -6,7 +6,9 @@
   comma @left,
   statement @cut,
   decl @cut,
-  predicate
+  predicate,
+  expression,
+
   // ContentElement,
   // If,
   // For,
@@ -84,6 +86,7 @@ expressionNoComma {
   // NewExpression { kw<"new"> expressionNoComma (!newArgs TypeArgList? ArgList)? } |
   // UnaryExpression |
   ParenthesizedExpression |
+  FunctionExpression |
   // ClassExpression |
   // FunctionExpression |
   // ArrowFunction |
@@ -103,6 +106,7 @@ expressionNoComma {
   String
 }
 
+FunctionExpression { FunctionName "(" expression ")" }
 ParenthesizedExpression { "(" expression ")" }
 
 RangeExpression {
@@ -129,9 +133,9 @@ PatternProperty {
 
 functionSignature { TypeParamList? ParamList (TypeAnnotation | TypePredicate)? }
 
-FunctionExpression {
-  async? kw<"function"> Star? VariableDefinition? functionSignature Block
-}
+// FunctionExpression {
+//   async? kw<"function"> Star? VariableDefinition? functionSignature Block
+// }
 
 UnaryExpression {
   !prefix (ckw<"await"> | ckw<"yield"> | kw<"void"> | kw<"typeof"> | kw<"delete"> |
@@ -187,6 +191,7 @@ commaSep1<content> {
 ImportName { word }
 FileName { String }
 BlockName { word }
+FunctionName { identifier }
 PropertyName { word }
 IfExpression { (word | '.' | '(' | ')')* }
 // VariableName { (word | '.')* }
