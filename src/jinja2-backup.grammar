@@ -222,3 +222,96 @@ ParamTypeList[@name=ParamList] {
 }
 
 @detectDelim
+
+
+
+
+/* -------------------------------------------------------------------------- */
+/*                                     old                                    */
+/* -------------------------------------------------------------------------- */
+
+// RangeExpression { "[" ("" | Number)? RangeDevider Number? "]" }
+// ObjectArgExpression { "[" expressionNoComma ~destructure "]" }
+// ArrayExpression { "[" commaSep1< expressionNoComma | ""> ~destructure "]" }
+
+// propName { PropertyDefinition | "[" expression ~destructure "]" | Number | String }
+
+// Property {
+//   pkwMod<"async">? (pkwMod<"get"> | pkwMod<"set"> | Star)? propName functionSignature Block |
+//   propName ~destructure (":" expressionNoComma)? |
+//   "..." expressionNoComma
+// }
+
+// PatternProperty {
+//   "..." patternAssign |
+//   (PropertyName | Number | String) ~destructure (":" pattern)? ("=" expressionNoComma)?
+// }
+
+// functionSignature { TypeParamList? ParamList (TypeAnnotation | TypePredicate)? }
+
+// // FunctionExpression {
+// //   async? kw<"function"> Star? VariableDefinition? functionSignature Block
+// // }
+
+// EscapedVariableExpression {
+//   VariableName "|e"
+// }
+
+// VariableExpression {
+//   // VariableName
+//   // String
+// }
+
+// BinaryExpression {
+//   expressionNoComma !exp ArithOp<"**"> expressionNoComma |
+//   expressionNoComma !times (divide | ArithOp<"%"> | ArithOp<"*">) expressionNoComma |
+//   expressionNoComma !plus ArithOp<"+" | "-"> expressionNoComma |
+//   expressionNoComma !shift BitOp<">>" ">"? | "<<"> expressionNoComma |
+//   expressionNoComma !rel (LessThan | CompareOp<"<=" | ">" "="?> | kw<"instanceof">) expressionNoComma |
+//   (expressionNoComma | PrivatePropertyName) !rel kw<"in"> expressionNoComma |
+//   expressionNoComma !rel ckw<"as"> (kw<"const"> | type) |
+//   expressionNoComma !equal CompareOp<"==" "="? | "!=" "="?> expressionNoComma |
+//   expressionNoComma !bitOr BitOp { "|" } expressionNoComma |
+//   expressionNoComma !bitXor BitOp<"^"> expressionNoComma |
+//   expressionNoComma !bitAnd BitOp { "&" } expressionNoComma |
+//   expressionNoComma !and LogicOp<"&&"> expressionNoComma |
+//   expressionNoComma !or LogicOp<"||" | "??"> expressionNoComma
+// }
+
+// AssignmentExpression {
+//   (VariableName | MemberExpression) !assign UpdateOp<($[+\-/%^] | "*" "*"? | "|" "|"? | "&" "&"? | "<<" | ">>" ">"? | "??") "=">
+//     expressionNoComma |
+//   (VariableName | MemberExpression | ArrayPattern | ObjectPattern) !assign "=" expressionNoComma
+// }
+
+// MemberExpression {
+//   expressionNoComma !member ("." PropertyDefinition | ObjectArgExpression )
+// }
+// // MemberExpression {
+// //   expressionNoComma !member ("." PropertyDefinition | "[" expression "]")
+// // }
+
+// ArgList { "(" commaSep<expressionNoComma> ")" }
+
+// FunctionName { identifier ("." identifier)? ~arrow }
+// FunctionName { identifier ~arrow }
+// FunctionName { String }
+// VariableName { (word | '.')* }
+// VariableName { identifier ~arrow }
+// VarDotNotation { identifier ("." identifier)* ~arrow }
+// VarPropNotation { identifier ("." identifier)* ("[" identifier "]")? ~arrow }
+// VariableName { identifier }
+
+  // statementBlock { "{%" blockStatementRest }
+  // blockStatementRest { ![%] blockStatementRest | "%" blockStatementAfterStar }
+  // blockStatementAfterStar { "}" | "%" blockStatementAfterStar | ![%}] blockStatementRest }
+
+  // BlockStatement { StartTag kw<"block"> BlockName ![{%}]* statement* kw<"endblock"> EndTag }
+
+  // FunctionExpression { VariableName "(" FunctionParameters ")" }
+  // ParenthesizedExpression { "(" (VariableName | "") ")" }
+
+//   PropertyDefinition { word }
+// FunctionParameters { commaSep<identifier ("." identifier)?> ~arrow }
+// IfExpression { (word | '.' | '(' | ')')* }
+// pkwMod<term> { @extend[@name={term}]<word, term> }

@@ -1,24 +1,10 @@
 import { parser } from './jinja2.grammar'
-import { LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent } from '@codemirror/language'
-import { styleTags, tags as t } from '@codemirror/highlight'
+import { LRLanguage, LanguageSupport } from '@codemirror/language'
+// import { styleTags, tags as t } from '@codemirror/highlight'
 import { completeFromList } from "@codemirror/autocomplete"
 
 export const jinja2Language = LRLanguage.define({
-  parser: parser.configure({
-    // props: [
-    // indentNodeProp.add({
-    //   Application: delimitedIndent({ closing: ')', align: false })
-    //   Application: context => context.column(context.node.from) + context.unit
-    // }),
-    // foldNodeProp.add({
-    //   Application: foldInside
-    // }),
-    // styleTags({
-    //   // Variable: t.variableName,
-    //   // String: t.string,
-    // })
-    // ]
-  }),
+  parser: parser.configure({}),
   languageData: {
     commentTokens: { block: { open: "{#", close: "#}" } }
   }

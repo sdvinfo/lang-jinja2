@@ -2,32 +2,18 @@
   if @right,
   else @right,
   elif @right,
-  member,
+  member @left,
   comma @left,
   statement @cut,
   decl @cut,
-  predicate,
-  expression,
-
-  // ContentElement,
-  // If,
-  // For,
-  // VariableStatement,
-  // Block
-  // CommonStatement
+  predicate
 }
 
 @top Jinja2Template { statement+ }
 
-
 statement[@isGroup=Statement] {
-  // BlockDecl
   ContentElement |
   Block
-  // ImportStatement |
-  // VariableStatement
-  // CommonStatement { statementBlock } |
-  // BlockStatement
 }
 
 ContentElement {
@@ -41,180 +27,76 @@ Block {
   EndBlock { StartTag kw<"endblock"> EndTag }
 }
 
-Expression { expression }
 
-If { IfStatement ElifStatement? ElseStatement? EndIfStatement }
+ExtendsStatement { StartTag kw<"extends"> FileName EndTag }
+ImportStatement { StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag }
 
-For { ForStatement VariableStatement+ EndForStatement }
-ForStatement { StartTag kw<"for"> PropertyName kw<"in"> expression EndTag }
-EndForStatement { StartTag kw<"endfor"> EndTag }
-
-IfStatement { StartTag kw<"if"> Expression EndTag }
-ElifStatement { StartTag kw<"elif"> Expression EndTag }
+If { IfStatement ElifStatement* ElseStatement? EndIfStatement }
+IfStatement { StartTag kw<"if"> ifExpression EndTag }
+ElifStatement { StartTag kw<"elif"> ifExpression EndTag }
 ElseStatement { StartTag kw<"else"> EndTag }
 EndIfStatement { StartTag kw<"enif"> EndTag }
 
-BlockStatement { StartTag kw<"block"> BlockName ![{%}]* statement* kw<"endblock"> EndTag }
-ExtendsStatement { StartTag kw<"extends"> FileName EndTag }
-ImportStatement { StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag }
-VariableStatement { StartVariable Expression EndVariable }
-// VariableStatement { StartVariable VariableName EndVariable }
-
+For { ForStatement VariableStatement+ EndForStatement }
+ForStatement { StartTag kw<"for"> commaSep<PropertyName> kw<"in"> forExpression+ EndTag }
+EndForStatement { StartTag kw<"endfor"> EndTag }
+VariableStatement { StartVariable varExpression EndVariable }
 
 // ===============================================================
 
-expression[@isGroup=Expression] {
-  expressionNoComma | SequenceExpression
-}
-
-SequenceExpression {
-  expressionNoComma !comma ("," expressionNoComma)+
-}
-
-expressionNoComma {
+ifExpression[@isGroup=IfExpressions] {
   Number |
-  // TemplateString |
   VariableName |
+  boolean
+}
+
+forExpression[@isGroup=ForExpressions] {
+  Number |
   boolean |
-  // kw<"this"> |
-  // kw<"null"> |
-  // kw<"super"> |
-  // RegExp |
-  RangeExpression |
-  ArrayExpression |
-  // ObjectExpression { "{" commaSep<Property> ~destructure "}" } |
-  // NewExpression { kw<"new"> expressionNoComma (!newArgs TypeArgList? ArgList)? } |
-  // UnaryExpression |
-  ParenthesizedExpression |
-  FunctionExpression |
-  // ClassExpression |
-  // FunctionExpression |
-  // ArrowFunction |
-  // MemberExpression |
-  // BinaryExpression |
-  // ConditionalExpression { expressionNoComma !ternary questionOp expressionNoComma LogicOp<":"> expressionNoComma } |
-  // AssignmentExpression |
-  // PostfixExpression { expressionNoComma !postfix (incdec | LogicOp<"!">) } |
-  // CallExpression { expressionNoComma !call TypeArgList? ArgList } |
-  // TaggedTemplateExpression { expressionNoComma !taggedTemplate TemplateString } |
-  // DynamicImport { kw<"import"> "(" expressionNoComma ")" } |
-  // ImportMeta { kw<"import"> "." PropertyName } |
-  // PrefixCast { tsAngleOpen type ~tsAngle ">" expressionNoComma } |
-  // ArrowFunction[@dynamicPrecedence=1] {
-    //   TypeParamList { tsAngleOpen commaSep<typeParam> ">" } ParamList TypeAnnotation? "=>" (Block | expressionNoComma)
-    // }
-  String
+  VariableName |
+  Range |
+  ObjectArgument |
+  Function
 }
 
-FunctionExpression { FunctionName "(" expression ")" }
-ParenthesizedExpression { "(" expression ")" }
 
-RangeExpression {
-  "[" Number? ":" Number? "]"
+varExpression[@isGroup=VarExpression] {
+  Number |
+  boolean |
+  Range |
+  ObjectArgument |
+  Function |
+  VariableName |
+  EscapedVariableName
 }
 
-ArrayExpression {
-  // "[" commaSep1<"..."? expressionNoComma | ""> ~destructure "]"
-  "[" commaSep1< expressionNoComma | ""> ~destructure "]"
-}
+Function { FunctionName "(" (PropertyName | "") ~destructure ")" }
 
-propName { PropertyDefinition | "[" expression "]" | Number | String }
+// ======================== END =======================================
+ImportName { word }
+FileName { string }
+BlockName { word }
+FunctionName { identifier !member ("." identifier)* }
+VariableName { identifier !member ("." identifier)* }
+PropertyName { identifier !member ("." identifier)* }
 
-Property {
-  pkwMod<"async">? (pkwMod<"get"> | pkwMod<"set"> | Star)? propName functionSignature Block |
-  propName ~destructure (":" expressionNoComma)? |
-  "..." expressionNoComma
-}
+EscapedVariableName { VariableName "|e" }
 
-PatternProperty {
-  "..." patternAssign |
-  (PropertyName | Number | String) ~destructure (":" pattern)? ("=" expressionNoComma)?
-}
+WithContext { ckw<"with"> ckw<"context"> }
+kw<term> { @specialize[@name={term}]<identifier, term> }
+ckw<term> { @extend[@name={term}]<identifier, term> }
 
-functionSignature { TypeParamList? ParamList (TypeAnnotation | TypePredicate)? }
-
-// FunctionExpression {
-//   async? kw<"function"> Star? VariableDefinition? functionSignature Block
-// }
-
-UnaryExpression {
-  !prefix (ckw<"await"> | ckw<"yield"> | kw<"void"> | kw<"typeof"> | kw<"delete"> |
-           LogicOp<"!"> | BitOp<"~"> | incdec | incdecPrefix | ArithOp<"+" | "-">)
-  expressionNoComma
-}
-
-BinaryExpression {
-  expressionNoComma !exp ArithOp<"**"> expressionNoComma |
-  expressionNoComma !times (divide | ArithOp<"%"> | ArithOp<"*">) expressionNoComma |
-  expressionNoComma !plus ArithOp<"+" | "-"> expressionNoComma |
-  expressionNoComma !shift BitOp<">>" ">"? | "<<"> expressionNoComma |
-  expressionNoComma !rel (LessThan | CompareOp<"<=" | ">" "="?> | kw<"instanceof">) expressionNoComma |
-  (expressionNoComma | PrivatePropertyName) !rel kw<"in"> expressionNoComma |
-  expressionNoComma !rel ckw<"as"> (kw<"const"> | type) |
-  expressionNoComma !equal CompareOp<"==" "="? | "!=" "="?> expressionNoComma |
-  expressionNoComma !bitOr BitOp { "|" } expressionNoComma |
-  expressionNoComma !bitXor BitOp<"^"> expressionNoComma |
-  expressionNoComma !bitAnd BitOp { "&" } expressionNoComma |
-  expressionNoComma !and LogicOp<"&&"> expressionNoComma |
-  expressionNoComma !or LogicOp<"||" | "??"> expressionNoComma
-}
-
-AssignmentExpression {
-  (VariableName | MemberExpression) !assign UpdateOp<($[+\-/%^] | "*" "*"? | "|" "|"? | "&" "&"? | "<<" | ">>" ">"? | "??") "=">
-    expressionNoComma |
-  (VariableName | MemberExpression | ArrayPattern | ObjectPattern) !assign "=" expressionNoComma
-}
-
-MemberExpression {
-  expressionNoComma !member (("." | "?.") PropertyName | "[" expression "]")
-}
-
-ArgList {
-  "(" commaSep<"..."? expressionNoComma> ")"
-}
-
-ArrowFunction {
-  async? (ParamList { VariableDefinition } | ParamList TypeAnnotation?) "=>" (Block | expressionNoComma)
-}
-
+boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
 commaSep<content> {
   "" | content ("," content?)*
 }
+// commaSep1<content> {
+//   content ("," content)*
+// }
 
-commaSep1<content> {
-  content ("," content)*
-}
+@skip { spaces | newline | сomment }
 
-// ======================== END =======================================
-
-
-ImportName { word }
-FileName { String }
-BlockName { word }
-FunctionName { identifier }
-PropertyName { word }
-IfExpression { (word | '.' | '(' | ')')* }
-// VariableName { (word | '.')* }
-// VariableName { identifier ~arrow }
-VariableName { identifier ("." identifier)* ~arrow }
-WithContext { ckw<"with"> ckw<"context"> }
-kw<term> { @specialize[@name={term}]<identifier, term> }
-// Contextual keywords
-ckw<term> { @extend[@name={term}]<identifier, term> }
-anyQuotationMark { ("'" | '"') }
-boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
-
-
-
-// @skip { spaces | newline | CommentBlock }
-// StartTag[closedBy="EndTag"] { "{%" }
-// EndTag[openedBy="StartTag"] { "%}" }
-// StartVariable[closedBy="EndVariable"] { "{{" }
-// EndVariable[openedBy="StartVariable"] { "}}" }
-
-@skip { spaces | newline | Comment }
-
-@skip {} {
+@skip { } {
   StartTag[closedBy="EndTag"] { "{%" }
   EndTag[openedBy="StartTag"] { "%}" }
   StartVariable[closedBy="EndVariable"] { "{{" }
@@ -223,26 +105,28 @@ boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
 
 
 @tokens {
-  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
-  // spaces { std.whitespace+ }
+  // spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  spaces { std.whitespace+ }
   newline[@export] { $[\r\n\u2028\u2029] }
-  word { identifierChar (identifierChar | std.digit)* }
-  identifierChar { std.asciiLetter | $[_$\u{a1}-\u{10ffff}] }
+  word { identifierChar (identifierChar | std.digit )* }
+  identifierChar { std.asciiLetter | $[_\u{a1}-\u{10ffff}] }
   identifier { word }
-  // string { ('"' | "'") (word | '.')* ('"' | "'") }
+
+
+
   @precedence { spaces, newline, identifier }
   @precedence { spaces, newline, word }
 
-  list<item> { item ("," item)* }
+  RangeDevider { ":" }
+  Range { "[" ("" | (std.whitespace* Number))? RangeDevider ("" | (std.whitespace* Number))? "]" }
+  ObjectArgument { "[" ("'" | '"') identifier ("'" | '"') "]" }
+  @precedence { Range, ObjectArgument, spaces }
 
   // FIXME split into multiple tokens
-  Comment { "{#" blockCommentRest }
+  сomment { "{#" blockCommentRest }
   blockCommentRest { ![#] blockCommentRest | "#" blockCommentAfterStar }
   blockCommentAfterStar { "}" | "#" blockCommentAfterStar | ![#}] blockCommentRest }
 
-  statementBlock { "{%" blockStatementRest }
-  blockStatementRest { ![%] blockStatementRest | "%" blockStatementAfterStar }
-  blockStatementAfterStar { "}" | "%" blockStatementAfterStar | ![%}] blockStatementRest }
 
 
   // Number {
@@ -254,16 +138,18 @@ boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
   //   "0o" $[0-7_]+ "n"?
   // }
 
+
+
   Number { '-'? int frac? exp?  }
   int  { '0' | $[1-9] std.digit* }
   frac { '.' std.digit+ }
   exp  { $[eE] $[+\-]? std.digit+ }
 
-  String {
+  string {
     '"' (![\\\n"] | "\\" _)* '"'? |
     "'" (![\\\n'] | "\\" _)* "'"?
   }
-  // Todo: maybe change them?
+
   @precedence { Number, '.' }
 
   // "{{" "}}" "{%" "%}"
