@@ -1,0 +1,211 @@
+@precedence {
+  startTag @left,
+  endTag @right,
+  if @right,
+  elif @right,
+  else @right,
+  for @right,
+  member @left,
+  comma @left,
+  // StartVariable,
+  statement @cut,
+  decl @cut,
+  predicate
+  expression,
+  varExpression,
+  string,
+  // VariableName,
+  // FunctionName,
+  identifier
+  // identifier
+}
+
+@top Jinja2Template { statement+ }
+
+@detectDelim
+
+statement[@isGroup=Statement] {
+  ContentElement |
+  (Block |
+  expression)
+}
+
+ContentElement {
+  ExtendsStatement |
+  ImportStatement
+}
+
+Block {
+  StartBlock { StartTag kw<"block"> BlockName EndTag }
+  expression*
+  EndBlock { StartTag kw<"endblock"> EndTag }
+}
+
+expression[@isGroup=Expression] {
+  If |
+  For |
+  VariableStatement
+}
+
+ExtendsStatement { StartTag kw<"extends"> FileName EndTag }
+ImportStatement { StartTag kw<"from"> FileName kw<"import"> ImportName WithContext? EndTag }
+VariableStatement { StartVariable (varExpression | compositeVarNameExpression) EndVariable }
+
+If { IfStatement ElifStatement* ElseStatement? EndIfStatement }
+IfStatement { StartTag kw<"if"> (ifExpression | compositeVarNameExpression) EndTag }
+ElifStatement { StartTag kw<"elif"> (ifExpression | compositeVarNameExpression) EndTag }
+ElseStatement { StartTag kw<"else"> EndTag }
+EndIfStatement { StartTag kw<"endif"> EndTag }
+
+For { ForStatement VariableStatement+ EndForStatement }
+ForStatement { StartTag @specialize<identifier, "for"> commaSep<PropertyName> @specialize<identifier, "in"> forExpression+ EndTag }
+EndForStatement { StartTag kw<"endfor"> EndTag }
+
+
+// ===============================================================
+
+
+
+ifExpression[@isGroup=IfExpressions] {
+  Number |
+  VariableName |
+  boolean
+}
+
+forExpression[@isGroup=ForExpressions] {
+  Number |
+  boolean |
+  VariableName |
+  Range |
+  ObjectArgument |
+  Function
+}
+
+
+varExpression[@isGroup=VarExpression] {
+  Number |
+  boolean |
+  Range |
+  ObjectArgument |
+  Function |
+  VariableName |
+  EscapedVariableName
+}
+
+compositeVarNameExpression {
+  (VariableName !member Range) |
+  (VariableName !member ObjectArgument+) |
+  (VariableName !member Range !member ObjectArgument+)
+}
+
+Function { FunctionName "(" (PropertyName | "") ~destructure ")" }
+
+// ======================== END =======================================
+ImportName { word }
+FileName {
+  "\"" identifier ("." identifier)* "\"" |
+  "\'" identifier ("." identifier)* "\'"
+}
+BlockName { word }
+FunctionName { identifier ("." identifier)* }
+VariableName { identifier ("." identifier)* }
+PropertyName { identifier ("." identifier)* }
+EscapedVariableName { VariableName "|e" }
+
+WithContext { ckw<"with"> ckw<"context"> }
+kw<term> { @specialize[@name={term}]<identifier, term> }
+// @external tokens forKw from "./tokens" { forKw }
+ckw<term> { @extend[@name={term}]<identifier, term> }
+boolean { @specialize[@name=BooleanLiteral]<identifier, "true" | "false"> }
+commaSep<content> {
+  "" | content ("," content?)*
+}
+
+// commaSep1<content> {
+//   content ("," content)*
+// }
+
+@skip { сomment }
+// @skip { spaces | newline | сomment }
+// @skip { } {
+  StartTag[closedBy="EndTag"] { "{%" }
+  EndTag[openedBy="StartTag"] { "%}" }
+  StartVariable[@dynamicPrecedence=1, closedBy="EndVariable"] { (("{" "{") | ("{" "{" " "))  !statement }
+  EndVariable[@dynamicPrecedence=1, openedBy="StartVariable"] { (("}" "}") | (" " "}" "}"))  !statement }
+// }
+
+
+ObjectArgument {
+  "["
+  commaSep<(("'" | '"')? (identifier | number) ("'" | '"')?)>
+  "]"
+}
+
+// @skip { } {
+//   StartTag[closedBy="EndTag"] { "{" "%" }
+//   EndTag[openedBy="StartTag"] { "%" "}" }
+//   StartVariable[closedBy="EndVariable"] { '"'? "{" "{" }
+//   EndVariable[openedBy="StartVariable"] { "}" "}" '"'? }
+//   // StartVariable[closedBy="EndVariable"] { "{{" | '"{{' | "\\{{" }
+//   // EndVariable[openedBy="StartVariable"] { "}}" | '}}"' | "}}\\" }
+// }
+
+
+@tokens {
+  // EndTag[openedBy="StartTag"] { "%" "}" }
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  // spaces { std.whitespace+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+  word { identifierChar (identifierChar | std.digit )* }
+  // identifierChar { std.asciiLetter | $[_\u{a1}-\u{10ffff}] }
+  identifierChar { std.asciiLetter | "_" }
+  identifier { word }
+
+  @precedence {  spaces, identifier  }
+  // @precedence {  spaces, newline, identifier  }
+  // @precedence { spaces, newline, word }
+
+
+  RangeDevider { ":" }
+  Range { "[" ("" | (std.whitespace* Number))? RangeDevider ("" | (std.whitespace* Number))? "]" }
+  // @precedence { Range, spaces }
+
+  // FIXME split into multiple tokens
+  сomment { "{#" blockCommentRest }
+  blockCommentRest { ![#] blockCommentRest | "#" blockCommentAfterStar }
+  blockCommentAfterStar { "}" | "#" blockCommentAfterStar | ![#}] blockCommentRest }
+
+
+
+  // Number {
+  //   (std.digit ("_" | std.digit)* ("." ("_" | std.digit)*)? | "." std.digit ("_" | std.digit)*)
+  //     (("e" | "E") ("+" | "-")? ("_" | std.digit)+)? |
+  //   std.digit ("_" | std.digit)* "n" |
+  //   "0x" (std.digit | $[a-fA-F] | "_")+ "n"? |
+  //   "0b" $[01_]+ "n"? |
+  //   "0o" $[0-7_]+ "n"?
+  // }
+
+
+
+  number { '-'? int frac? exp?  }
+  Number { '-'? int frac? exp?  }
+  int  { '0' | $[1-9] std.digit* }
+  frac { '.' std.digit+ }
+  exp  { $[eE] $[+\-]? std.digit+ }
+
+  // string {
+  //   '"' (![\\\n"] | "\\" _)* '"'? |
+  //   "'" (![\\\n'] | "\\" _)* "'"?
+  // }
+
+
+  // @precedence { identifier, Number,  '.' }
+
+  // "{{" "}}" "{%" "%}"
+  // "(" ")" "[" "]" "{" "}"
+  // "." "," ":"
+
+}
+
+
